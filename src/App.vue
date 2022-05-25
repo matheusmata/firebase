@@ -1,28 +1,91 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+
+    <div>
+      <h1>Cadastrar</h1>
+
+      <label>Nome: </label>
+      <input type="text" v-model="nome"/> <br/><br/>
+      <label>Email: </label>
+      <input type="text" v-model="email"/> <br/><br/>
+      <label>Senha: </label>
+      <input type="text" v-model="senha"/>
+
+      <br/>
+      <button @click="cadastrarUsuario">Cadsatrar</button>
+      <button @click="entrar">Logar</button>
+    </div>
+
+
+    <div v-if="user">
+      <h2>{{this.user.email}}</h2>
+      <h2>{{this.user.nome}}</h2>
+    </div>
+
+
+
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import firebase from './services/firebaseConnection';
 
 export default {
   name: 'App',
-  components: {
-    HelloWorld
+  data(){
+    return{
+      nome: '',
+      email: '',
+      senha: '',
+      user: null,
+    }
+  },
+  methods:{
+
+    async cadastrarUsuario(){
+     const { user } = await firebase.auth().createUserWithEmailAndPassword(this.email, this.senha)
+
+     await firebase.firestore().collection('users')
+     .doc(user.uid)
+     .set({
+      nome: this.nome  
+     })
+     .then(()=>{
+
+       this.nome = '';
+       this.email = '';
+       this.senha = '';
+
+     })
+     .catch((error)=> {
+       console.log(error);
+     })
+
+    },
+
+    async entrar(){
+     const { user } =  await firebase.auth().signInWithEmailAndPassword(this.email, this.senha)
+
+     await firebase.firestore().collection('users')
+     .doc(user.uid)
+     .get()
+     .then((snapshot)=>{
+       this.user = { 
+         nome: snapshot.data().nome,
+         email: user.email
+       };
+     })
+
+     this.email = '';
+     this.senha = '';
+
+    }
+
+
   }
 }
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+<style scoped>
+
 </style>
